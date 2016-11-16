@@ -113,55 +113,108 @@ colnames(long_metacom) <- c("period", "coherence", "turnover", "boundary")
 #######################
 # WORK AREA
 
-##########
-matrix_list <- list()
-period_list <- list()
+# FULL (all plots)
+
+f_matrix_list <- list()
+f_period_list <- list()
 for (i in 1:length(Full)){  
   matrix <- Full[[i]]
   period <- matrix$period[1]
   matrix1 <- matrix[,-1]
   matrix2 <- dcast(matrix1, formula = plot ~ species)
   matrix3 <- tibble::column_to_rownames(as.data.frame(matrix2), "plot")
-  matrix_list[[i]] <- matrix3
-  period_list[[i]] <- period
+  f_matrix_list[[i]] <- matrix3
+  f_period_list[[i]] <- period
 }
 
-coherence_list <- list()
-for (i in 1:length(matrix_list)){
-  co <- Coherence(matrix_list[[i]])
-  coherence <- co$z
-}
+#f_coherence_list <- list()
+#for (i in 1:length(f_matrix_list)){
+#  co <- Coherence(f_matrix_list[[i]])
+#  f_coherence_list <- co$z
+#}
   
-turnover_list <- list()
-for (i in 1:length(matrix_list)){
-   t <- Turnover(matrix_list[[i]])
-    turnover <- t$z
-  turnover_list[[i]] <- turnover
+f_turnover_list <- list()
+for (i in 1:length(f_matrix_list)){
+  t <- Turnover(f_matrix_list[[i]])
+  turnover <- t$z
+  f_turnover_list[[i]] <- turnover
 }
  
-boundary_list <- list()
-for (i in 1:length(matrix_list)){
-  b <- BoundaryClump(matrix_list[[i]])
-  boundary <- b$index
-  boundary_list[[i]] <- boundary
-}
+#boundary_list <- list()
+#for (i in 1:length(f_matrix_list)){
+#  b <- BoundaryClump(f_matrix_list[[i]])
+#  boundary <- b$index
+#  f_boundary_list[[i]] <- boundary
+#}
   
 # dataframe of turnover results
 
-turnover_df <- as.data.frame(do.call("rbind", turnover_list))
-period_df <- as.data.frame(do.call("rbind", period_list))
-#coherence_df <- as.data.frame(do.call("rbind", coherence_list))
-#boundary_df <- as.data.frame(do.call("rbind", boundary_list))
+f_turnover_df <- as.data.frame(do.call("rbind", f_turnover_list))
+f_period_df <- as.data.frame(do.call("rbind", f_period_list))
+#f_coherence_df <- as.data.frame(do.call("rbind", f_coherence_list))
+#f_boundary_df <- as.data.frame(do.call("rbind", f_boundary_list))
 
-df <- bind_cols(period_df, turnover_df)
-colnames(df) <- c("period", "turnover")
+f_df <- bind_cols(f_period_df, f_turnover_df)
+colnames(f_df) <- c("period", "turnover")
 
 # plotting
 
 ggplot(df, aes(x = period, y = turnover)) +
   geom_area() +
   geom_smooth() +
-  theme_bw()
+  theme_bw() +
+  ggtitle("All Plots")
 
+# LONG-TERM
+
+lt_matrix_list <- list()
+lt_period_list <- list()
+for (i in 1:length(LongTerm)){  
+  matrix <- LongTerm[[i]]
+  period <- matrix$period[1]
+  matrix1 <- matrix[,-1]
+  matrix2 <- dcast(matrix1, formula = plot ~ species)
+  matrix3 <- tibble::column_to_rownames(as.data.frame(matrix2), "plot")
+  lt_matrix_list[[i]] <- matrix3
+  lt_period_list[[i]] <- period
+}
+
+#lt_coherence_list <- list()
+#for (i in 1:length(lt_matrix_list)){
+#  co <- Coherence(lt_matrix_list[[i]])
+#  lt_coherence_list <- co$z
+#}
+
+lt_turnover_list <- list()
+for (i in 1:length(lt_matrix_list)){
+  t <- Turnover(lt_matrix_list[[i]])
+  turnover <- t$z
+  lt_turnover_list[[i]] <- turnover
+}
+
+#lt_boundary_list <- list()
+#for (i in 1:length(lt_matrix_list)){
+#  b <- BoundaryClump(lt_matrix_list[[i]])
+#  boundary <- b$index
+#  lt_boundary_list[[i]] <- boundary
+#}
+
+# dataframe of turnover results
+
+lt_turnover_df <- as.data.frame(do.call("rbind", lt_turnover_list))
+lt_period_df <- as.data.frame(do.call("rbind", lt_period_list))
+#lt_coherence_df <- as.data.frame(do.call("rbind", lt_coherence_list))
+#lt_boundary_df <- as.data.frame(do.call("rbind", lt_boundary_list))
+
+lt_df <- bind_cols(lt_period_df, lt_turnover_df)
+colnames(lt_df) <- c("period", "turnover")
+
+# plotting
+
+ggplot(df, aes(x = period, y = turnover)) +
+  geom_area() +
+  geom_smooth() +
+  theme_bw() +
+  ggtitle("Long-Term Plots")
 
 ###########
