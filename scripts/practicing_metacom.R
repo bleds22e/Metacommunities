@@ -159,7 +159,7 @@ colnames(f_df) <- c("period", "turnover")
 
 # plotting
 
-ggplot(df, aes(x = period, y = turnover)) +
+ggplot(f_df, aes(x = period, y = turnover)) +
   geom_area() +
   geom_smooth() +
   theme_bw() +
@@ -211,10 +211,10 @@ colnames(lt_df) <- c("period", "turnover")
 
 # plotting
 
-ggplot(df, aes(x = period, y = turnover)) +
+ggplot(lt_df, aes(x = period, y = turnover)) +
   geom_area() +
   geom_smooth() +
   theme_bw() +
   ggtitle("Long-Term Plots")
 
-###########
+# CONTROLS
