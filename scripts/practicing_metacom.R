@@ -127,11 +127,11 @@ for (i in 1:length(Full)){
   f_period_list[[i]] <- period
 }
 
-#f_coherence_list <- list()
-#for (i in 1:length(f_matrix_list)){
-#  co <- Coherence(f_matrix_list[[i]])
-#  f_coherence_list <- co$z
-#}
+f_coherence_list <- list()
+for (i in 1:length(f_matrix_list)){
+  co <- Coherence(f_matrix_list[[i]], sims = 10)
+  f_coherence_list[[i]] <- co$z
+}
   
 f_turnover_list <- list()
 for (i in 1:length(f_matrix_list)){
@@ -218,3 +218,6 @@ ggplot(lt_df, aes(x = period, y = turnover)) +
   ggtitle("Long-Term Plots")
 
 # CONTROLS
+
+###################
+
