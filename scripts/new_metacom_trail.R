@@ -10,6 +10,7 @@ library(reshape2)
 library(tibble)
 library(metacom)
 library(ggplot2)
+library(testit)
 
 ########################
 # DATA
@@ -49,35 +50,29 @@ portal_long <- select(portal, period, plot, species) %>%
 
 periods <- unique(portal_full$period)
 
-meta_df <- data.frame(period = character(435), coherence = numeric(435), 
-                        turnover = numeric(435), boundary_clump = numeric(435))
+meta_df <- data.frame(period = numeric(435), coherence = numeric(435), 
+                      turnover = numeric(435), boundary_clump = numeric(435))
 
-# turnover
-for (i in 1:435){
+Full <- split(portal_full, f = portal_full$period)
+
+LongTerm <- split(portal_long, f = portal_long$period)
+
+
+# for loop ignoring errors
+for (i in 37:435){
+  
   data <- portal_full %>% filter(period == i)
-  meta_df$period[i] <- as.numeric(data[1,1])
-  
+  meta_df$period[i] <- data[1,1]
   matrix <- data[,-1]
-  matrix <- dcast(matrix, formula = plot ~ species)
+  matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
   matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
+  matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
   
-  t <- Turnover(comm = matrix)
-  meta_df$turnover[i] <- t$z
+  meta_df$coherence[i] <- ifelse(has_error(Coherence(matrix)), NA, Coherence(matrix)$z)
+  meta_df$turnover[i] <- ifelse(has_error(Turnover(matrix)), NA, Turnover(matrix)$z)
+  meta_df$boundary_clump[i] <- ifelse(has_error(BoundaryClump(matrix)), NA, BoundaryClump(matrix)$index)
 }
 
-Coherence <- rep(0,435)
-# coherence
-for (i in 1:435){
-  data <- portal_full %>% filter(period == i)
-  meta_df$period[i] <- as.numeric(data[1,1])
-  
-  matrix <- data[,-1]
-  matrix <- dcast(matrix, formula = plot ~ species)
-  matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
-  
-  t <- Turnover(comm = matrix)
-  meta_df$turnover[i] <- t$z
-}
 
 # metacom function
 for (i in 1:435){
@@ -95,6 +90,32 @@ for (i in 1:435){
   meta_df$boundary_clump[i] <- m$Boundary[2]
 }
 
-##########
-test <- portal_full %>% filter(period == 444)
 
+
+
+
+#############################################
+# WORKING AREA
+
+test <- portal_full %>% filter(period == 19)
+test_df <- data.frame(period = character(435), coherence = numeric(435), 
+                      turnover = numeric(435), boundary_clump = numeric(435))
+
+test_df$period <- as.numeric(test[1,1])
+
+test <- Full[[19]]
+meta_df$period[19] <- data$period[1]
+
+matrix <- test[,-1]
+matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
+matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
+matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
+
+c <- Coherence(matrix)
+test_df$coherence <- c$z
+t <- Turnover(matrix)
+test_df$turnover <- t$z
+b <- BoundaryClump(matrix)
+test_df$boundary_clump <- b$index
+
+co <- ifelse(has_error(Coherence(matrix)), 0, Coherence(matrix)$z)
