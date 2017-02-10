@@ -51,10 +51,11 @@ portal_long <- select(portal, period, plot, species) %>%
 periods <- unique(portal_full$period)
 
 meta_df <- data.frame(period = numeric(435), coherence_z = numeric(435), coherence_pvalue = numeric(435),
-                      turnover = numeric(435), boundary_clump = numeric(435))
+                      turnover_z = numeric(435), turnover_pvalue = numeric(435), boundary_index = numeric(435),
+                      boundary_P = numeric(435))
 
 # for loop ignoring errors
-for (i in 382:length(periods)){
+for (i in 387:length(periods)){
   per <- periods[i]
   meta_df$period[i] <- per
   
@@ -73,9 +74,33 @@ for (i in 382:length(periods)){
     meta_df$coherence_pvalue[i] <- coherence$pval
   }
   
-  meta_df$turnover[i] <- ifelse(has_error(Turnover(matrix)), NA, Turnover(matrix)$z)
-  meta_df$boundary_clump[i] <- ifelse(has_error(BoundaryClump(matrix)), NA, BoundaryClump(matrix)$index)
+  if (has_error(Turnover(matrix))){
+    meta_df$turnover_z[i] <- NA
+    meta_df$turnover_pvalue[i] <- NA
+  } else {
+    turnover = Turnover(matrix)
+    meta_df$turnover_z[i] <- turnover$z
+    meta_df$turnover_pvalue[i] <- turnover$pval
+  }
   
+  if (has_error(BoundaryClump(matrix))){
+    meta_df$boundary_z[i] <- NA
+    meta_df$boundary_pvalue[i] <- NA
+  } else {
+    boundary = BoundaryClump(matrix)
+    meta_df$boundary_index[i] <- boundary$index
+    meta_df$boundary_P[i] <- boundary$P
+  }
+}
+
+meta_df$pattern <- NA
+for (i in 1:length(meta_df$period)){
+  meta_df$pattern[i] <- ifelse(-is.na(meta_df$coherence_pvalue[i]) | meta_df$coherence_pvalue[i] > 0.055, "random", 
+                               ifelse(meta_df$coherence_z[i] < 0, "checkerboard",
+                               ifelse(-is.na(meta_df$turnover_pvalue[i]) | meta_df$turnover_pvalue[i] > 0.055, "unknown",
+                               ifelse(meta_df$turnover_z[i] < 0 | is.na(meta_df$turnover_z[i]), "nested_subsets",
+                               ifelse(meta_df$boundary_P[i] > 0.055, "Gleasonian",
+                               ifelse(meta_df$boundary_index[i] > 0, "evenly_spaced_gradients", "Clementsian"))))))
 }
 
 write.csv(meta_df, "data/metacom_full.csv")
@@ -84,31 +109,7 @@ write.csv(meta_df, "data/metacom_full.csv")
 #############################################
 # WORKING AREA
 
-test <- portal_full %>% filter(period == 19)
-test_df <- data.frame(period = character(435), coherence = numeric(435), 
-                      turnover = numeric(435), boundary_clump = numeric(435))
-
-test_df$period <- as.numeric(test[1,1])
-
-test <- Full[[19]]
-meta_df$period[19] <- data$period[1]
-
-matrix <- test[,-1]
-matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
-matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
-matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
-
-c <- Coherence(matrix)
-test_df$coherence <- c$z
-t <- Turnover(matrix)
-test_df$turnover <- t$z
-b <- BoundaryClump(matrix)
-test_df$boundary_clump <- b$index
-
-co <- ifelse(has_error(Coherence(matrix)), 0, Coherence(matrix)$z)
-
-
-##############
+# testing
 i = 15
 per <- periods[i]
 
@@ -129,3 +130,4 @@ if (has_error(Coherence(matrix))){
 
 meta_df$turnover[i] <- ifelse(has_error(Turnover(matrix)), NA, Turnover(matrix)$z)
 meta_df$boundary_clump[i] <- ifelse(has_error(BoundaryClump(matrix)), NA, BoundaryClump(matrix)$index)
+
