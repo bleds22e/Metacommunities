@@ -1,6 +1,6 @@
-# Practicing with metacom Package
+# Practicing with metacom Package - by period
 # EKB
-# October 2016
+# February 2017
 
 #########################
 # LIBRARIES
