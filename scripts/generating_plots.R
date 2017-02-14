@@ -9,12 +9,14 @@ library(ggplot2)
 # DATA
 
 meta <- read.csv("data/metacom_full.csv", header = TRUE)
+meta1 <- read.csv("data/metacom_year_full_function.csv", header = TRUE)
+meta2 <- read.csv("data/metacom_year_long_function.csv", header = TRUE)
 
 # PLOTS
 
 # plot of metrics and significance
 
-meta_df <- meta[,-c(1,9)]
+meta_df <- meta2[,-c(1,9)]
 meta_df <- gather(meta_df, 2:7, key = metric, value = value)
 
 meta_df$metric_type <- meta_df$metric
@@ -39,7 +41,7 @@ for (i in 1:length(meta_df$metric)) {
   }
 }
 
-ggplot(meta_df, aes(x = period, y = value)) +
+ggplot(meta_df, aes(x = year, y = value)) +
   geom_area() +
   geom_smooth(method = "loess") +
   facet_grid(metric_type ~ significance, scales = "free") +
@@ -58,7 +60,7 @@ for (i in 1:length(meta_df2$metric_type)){
   }
 }
 
-ggplot(meta_df2, aes(x = period, y = metric)) +
+ggplot(meta_df2, aes(x = year, y = metric)) +
   geom_col(aes(fill = sig_or_NS)) +
   geom_smooth(method = "loess") +
   facet_grid(. ~ metric_type, scales = "free") +
@@ -66,5 +68,5 @@ ggplot(meta_df2, aes(x = period, y = metric)) +
 
 # show numbers of metacom categories
 
-ggplot(meta, aes(x = pattern)) +
+ggplot(meta2, aes(x = pattern)) +
   geom_bar()
