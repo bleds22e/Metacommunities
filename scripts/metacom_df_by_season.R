@@ -35,54 +35,52 @@ portal_long <- select(portal, year = yr, month = mo, period, plot, species) %>%
          species  %in% c('NA', 'DM', 'PF', 'PE', 'DS', 'PP', 'SH', 'OT', 'DO', 
                          'OL', 'RM', 'PM', 'RF', 'PH', 'BA', 'SF', 'RO', 'SO', 
                          'PI', 'PB', 'PL'),
-         plot %in% c(4, 11, 19, 20, 21, 3, 14, 15, 17)) 
+         plot %in% c(3, 4, 10, 11, 14, 15, 16, 17, 19, 20, 21, 23)) 
 
 ### Add Season ###
 
 # four seasons
 full_4 <- add_seasons(portal_full, 4) %>%
-  group_by(species, plot, season4_yr, season4) %>%
-  summarise(count = n())
+  group_by(species, plot, season4_yr, season4) %>% 
+  tidyr::unite(season_yr, season4_yr, season4, sep = "_")
 long_4 <- add_seasons(portal_long, 4) %>%
-  group_by(species, plot, season4_yr, season4) %>%
-  summarise(count = n())
+  group_by(species, plot, season4_yr, season4) %>% 
+  tidyr::unite(season_yr, season4_yr, season4, sep = "_")
 
 # two seasons
 full_2 <- add_seasons(portal_full, 2) %>%
-  group_by(species, plot, season2_yr, season2) %>%
-  summarise(count = n())
+  group_by(species, plot, season2_yr, season2) %>% 
+  tidyr::unite(season_yr, season2_yr, season2, sep = "_")
 long_2 <- add_seasons(portal_long, 2) %>%
-  group_by(species, plot, season2_yr, season2) %>%
-  summarise(count = n())
-
-# NEED TO SUMMARIZE BY SPECIES COUNTS BY SEASON BY YEAR
+  group_by(species, plot, season2_yr, season2) %>% 
+  tidyr::unite(season_yr, season2_yr, season2, sep = "_")
 
 ##########################
 # DATAFRAMES
 
-# four seasons
-  # full (all plots)
+### Four Seasons
+
+# full (all plots)
+timestep <- unique(full_4$season_yr)
 
 meta_full_s4 <-
   data.frame(
-    year4 = NA,
-    coherence_z = NA,
-    coherence_pvalue = NA,
-    turnover_z = NA,
-    turnover_pvalue = NA,
-    boundary_index = NA,
-    boundary_P = NA,
+    season_yr = NA,
+    coherence_z = numeric(length(timestep)),
+    coherence_pvalue = numeric(length(timestep)),
+    turnover_z = numeric(length(timestep)),
+    turnover_pvalue = numeric(length(timestep)),
+    boundary_index = numeric(length(timestep)),
+    boundary_P = numeric(length(timestep)),
     pattern = NA
   )
 
-full_s4yr <- unique(interaction(full_4$season4_yr, full_4$season4))
-
-for (i in 1:length(full_s4yr)){
+for (i in 1:length(timestep)){
   
-  meta_full_s4$year4[i] <- full_s4yr[i]
+  meta_full_s4$season_yr[i] <- timestep[i]
   
-  data <- select(full_4) %>% filter(season4_yr == full_s4yr[i]) # stopped editing here--filter by year and season--maybe combine the column like in full_s4yr?
-  matrix <- data[,-1]
+  data <- filter(full_4, season_yr == timestep[i])
+  matrix <- data[,-c(1:3,6)]
   matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
   matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
   matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
@@ -98,43 +96,120 @@ for (i in 1:length(full_s4yr)){
   
 }
 
-write.csv(meta_df_full, "data/metacom_year_full_function.csv")
+write.csv(meta_full_s4, "data/metacom_season4_full.csv")
 
 # long-term plots only
+timestep <- unique(long_4$season_yr)
 
-meta_df_long <-
+meta_long_s4 <-
   data.frame(
-    year = numeric(40),
-    coherence_z = numeric(40),
-    coherence_pvalue = numeric(40),
-    turnover_z = numeric(40),
-    turnover_pvalue = numeric(40),
-    boundary_index = numeric(40),
-    boundary_P = numeric(40),
+    season_yr = NA,
+    coherence_z = numeric(length(timestep)),
+    coherence_pvalue = numeric(length(timestep)),
+    turnover_z = numeric(length(timestep)),
+    turnover_pvalue = numeric(length(timestep)),
+    boundary_index = numeric(length(timestep)),
+    boundary_P = numeric(length(timestep)),
     pattern = NA
   )
 
-years <- unique(portal_long$year)
-
-for (i in 1:length(years)){
+for (i in 148:length(timestep)){
   
-  meta_df_long$year[i] <- years[i]
+  meta_long_s4$season_yr[i] <- timestep[i]
   
-  data <- select(portal_long, -period) %>% filter(year == year[i])
-  matrix <- data[,-1]
+  data <- filter(long_4, season_yr == timestep[i]) 
+  matrix <- data[,-c(1:3,6)]
   matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
   matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
   matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
   
   metacom <- Metacommunity(matrix)
-  meta_df_long$coherence_z[i] <- as.numeric(paste(metacom$Coherence[2]))
-  meta_df_long$coherence_pvalue[i] <- as.numeric(paste(metacom$Coherence[3]))
-  meta_df_long$turnover_z[i] <- as.numeric(paste(metacom$Turnover[2]))
-  meta_df_long$turnover_pvalue[i] <- as.numeric(paste(metacom$Turnover[3]))
-  meta_df_long$boundary_index[i] <- metacom$Boundary$index
-  meta_df_long$boundary_P[i] <- metacom$Boundary$P
-  meta_df_long$pattern[i] <- IdentifyStructure(metacom)
+  meta_long_s4$coherence_z[i] <- as.numeric(paste(metacom$Coherence[2]))
+  meta_long_s4$coherence_pvalue[i] <- as.numeric(paste(metacom$Coherence[3]))
+  meta_long_s4$turnover_z[i] <- as.numeric(paste(metacom$Turnover[2]))
+  meta_long_s4$turnover_pvalue[i] <- as.numeric(paste(metacom$Turnover[3]))
+  meta_long_s4$boundary_index[i] <- metacom$Boundary$index
+  meta_long_s4$boundary_P[i] <- metacom$Boundary$P
+  meta_long_s4$pattern[i] <- IdentifyStructure(metacom)
   
 }
 
-write.csv(meta_df_long, "data/metacom_year_long_function.csv")
+write.csv(meta_long_s4, "data/metacom_season4_long.csv")
+
+### Two Seasons
+
+# full (all plots)
+timestep <- unique(full_2$season_yr)
+
+meta_full_s2 <-
+  data.frame(
+    season_yr = NA,
+    coherence_z = numeric(length(timestep)),
+    coherence_pvalue = numeric(length(timestep)),
+    turnover_z = numeric(length(timestep)),
+    turnover_pvalue = numeric(length(timestep)),
+    boundary_index = numeric(length(timestep)),
+    boundary_P = numeric(length(timestep)),
+    pattern = NA
+  )
+
+for (i in 1:length(timestep)){
+  
+  meta_full_s2$season_yr[i] <- timestep[i]
+  
+  data <- filter(full_2, season_yr == timestep[i])
+  matrix <- data[,-c(1:3,6)]
+  matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
+  matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
+  matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
+  
+  metacom <- Metacommunity(matrix)
+  meta_full_s2$coherence_z[i] <- as.numeric(paste(metacom$Coherence[2]))
+  meta_full_s2$coherence_pvalue[i] <- as.numeric(paste(metacom$Coherence[3]))
+  meta_full_s2$turnover_z[i] <- as.numeric(paste(metacom$Turnover[2]))
+  meta_full_s2$turnover_pvalue[i] <- as.numeric(paste(metacom$Turnover[3]))
+  meta_full_s2$boundary_index[i] <- metacom$Boundary$index
+  meta_full_s2$boundary_P[i] <- metacom$Boundary$P
+  meta_full_s2$pattern[i] <- IdentifyStructure(metacom)
+  
+}
+
+write.csv(meta_full_s2, "data/metacom_season2_full.csv")
+
+# long-term plots only
+timestep <- unique(long_2$season_yr)
+
+meta_long_s2 <-
+  data.frame(
+    season_yr = NA,
+    coherence_z = numeric(length(timestep)),
+    coherence_pvalue = numeric(length(timestep)),
+    turnover_z = numeric(length(timestep)),
+    turnover_pvalue = numeric(length(timestep)),
+    boundary_index = numeric(length(timestep)),
+    boundary_P = numeric(length(timestep)),
+    pattern = NA
+  )
+
+for (i in 70:length(timestep)){
+  
+  meta_long_s2$season_yr[i] <- timestep[i]
+  
+  data <- filter(long_2, season_yr == timestep[i]) 
+  matrix <- data[,-c(1:3,6)]
+  matrix <- dcast(matrix, formula = plot ~ species, fun.aggregate = length, value.var = "species")
+  matrix <- tibble::column_to_rownames(as.data.frame(matrix), "plot")
+  matrix <- as.matrix(as.data.frame(lapply(matrix, as.numeric)))
+  
+  metacom <- Metacommunity(matrix)
+  meta_long_s2$coherence_z[i] <- as.numeric(paste(metacom$Coherence[2]))
+  meta_long_s2$coherence_pvalue[i] <- as.numeric(paste(metacom$Coherence[3]))
+  meta_long_s2$turnover_z[i] <- as.numeric(paste(metacom$Turnover[2]))
+  meta_long_s2$turnover_pvalue[i] <- as.numeric(paste(metacom$Turnover[3]))
+  meta_long_s2$boundary_index[i] <- metacom$Boundary$index
+  meta_long_s2$boundary_P[i] <- metacom$Boundary$P
+  meta_long_s2$pattern[i] <- IdentifyStructure(metacom)
+  
+}
+
+write.csv(meta_long_s2, "data/metacom_season2_long.csv")
